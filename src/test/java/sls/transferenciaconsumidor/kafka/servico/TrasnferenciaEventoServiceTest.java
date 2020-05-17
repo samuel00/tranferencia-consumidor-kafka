@@ -48,18 +48,32 @@ class TrasnferenciaEventoServiceTest {
 
     @Test void publicaNovaTransferencia()
                     throws InterruptedException, IOException {
-	//given
+        //given
+        String json = "{\"id\":14,\"dataAgendamento\":\"03/05/2020\",\"dataTransferencia\":\"09/05/2020\",\"contaOrigem\":\"104736\",\"contaDestino\":\"204789\",\"valor\":10.0,\"valorTaxa\":72.0,\"status\":\"AGUARDANDO\"})";
 
-        String json = "\"{\"id\":7,\"dataAgendamento\":{\"year\":2020,\"month\":\"MAY\",\"monthValue\":5,\"chronology\":{\"calendarType\":\"iso8601\",\"id\":\"ISO\"},\"dayOfMonth\":2,\"dayOfWeek\":\"SATURDAY\",\"era\":\"CE\",\"dayOfYear\":123,\"leapYear\":true},\"dataTransferencia\":{\"year\":2020,\"month\":\"MAY\",\"monthValue\":5,\"chronology\":{\"calendarType\":\"iso8601\",\"id\":\"ISO\"},\"dayOfMonth\":9,\"dayOfWeek\":\"SATURDAY\",\"era\":\"CE\",\"dayOfYear\":130,\"leapYear\":true},\"contaOrigem\":\"104736\",\"contaDestino\":\"204789\",\"valor\":10.0,\"valorTaxa\":84.0,\"status\":\"AGUARDANDO\"}\"; line: 1, column: 28] (through reference chain: sls.transferenciaconsumidor.kafka.modelo.Transferencia[\"dataAgendamento\"]) and the record is ConsumerRecord(topic = transfer-events, partition = 0, leaderEpoch = 0, offset = 1, CreateTime = 1588467983282, serialized key size = 1, serialized value size = 495, headers = RecordHeaders(headers = [RecordHeader(key = event-source, value = [115, 99, 97, 110, 110, 101, 114])], isReadOnly = false), key = 7, value = {\"id\":7,\"dataAgendamento\":{\"year\":2020,\"month\":\"MAY\",\"monthValue\":5,\"chronology\":{\"calendarType\":\"iso8601\",\"id\":\"ISO\"},\"dayOfMonth\":2,\"dayOfWeek\":\"SATURDAY\",\"era\":\"CE\",\"dayOfYear\":123,\"leapYear\":true},\"dataTransferencia\":{\"year\":2020,\"month\":\"MAY\",\"monthValue\":5,\"chronology\":{\"calendarType\":\"iso8601\",\"id\":\"ISO\"},\"dayOfMonth\":9,\"dayOfWeek\":\"SATURDAY\",\"era\":\"CE\",\"dayOfYear\":130,\"leapYear\":true},\"contaOrigem\":\"104736\",\"contaDestino\":\"204789\",\"valor\":10.0,\"valorTaxa\":84.0,\"status\":\"AGUARDANDO\"})";
+	//when
         kafkaTemplate.sendDefault(json);
-
         new CountDownLatch(1).await(3, TimeUnit.SECONDS);
 
+	//then
         verify(transferenciaConsumidor,times(1)).onMessage(isA(ConsumerRecord.class));
         verify(trasnferenciaEventoService,times(1)).processarTransferenciaEvento(isA(ConsumerRecord.class));
 
-	//when
+    }
 
-	//then
+    @Test void publicaNovaTransferenciaComRetentativa()
+                    throws InterruptedException, IOException {
+        //given
+        Integer idTransferencia = 000;
+        String json = "{\"id\":" + idTransferencia + ",\"dataAgendamento\":\"03/05/2020\",\"dataTransferencia\":\"09/05/2020\",\"contaOrigem\":\"104736\",\"contaDestino\":\"204789\",\"valor\":10.0,\"valorTaxa\":72.0,\"status\":\"AGUARDANDO\"})";
+
+        //when
+        kafkaTemplate.sendDefault(json);
+        new CountDownLatch(1).await(3, TimeUnit.SECONDS);
+
+        //then
+        verify(trasnferenciaEventoService,times(4)).processarTransferenciaEvento(isA(ConsumerRecord.class));
+        verify(trasnferenciaEventoService,times(1)).handleRecovery(isA(ConsumerRecord.class));
+
     }
 }

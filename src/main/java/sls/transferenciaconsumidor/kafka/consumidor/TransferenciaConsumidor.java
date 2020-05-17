@@ -13,13 +13,13 @@ import java.io.IOException;
 @Slf4j
 public class TransferenciaConsumidor {
 
-    @Autowired
-    private TrasnferenciaEventoService trasnferenciaEventoService;
+	@Autowired
+	private TrasnferenciaEventoService trasnferenciaEventoService;
 
-    @KafkaListener(topics = {"transfer-events"}, id = "transferencia-grupo")
-    public void onMessage(ConsumerRecord<String,String> consumerRecord) throws IOException {
-	log.info("ConsumerRecord : {} ", consumerRecord );
-	trasnferenciaEventoService.processarTransferenciaEvento(consumerRecord);
-    }
+	@KafkaListener(topics = { "transfer-events" })
+	public void onMessage(ConsumerRecord<String, String> consumerRecord) throws IOException {
+		log.info("ConsumerRecord : {} ", consumerRecord);
+		trasnferenciaEventoService.processarTransferenciaEvento(consumerRecord);
+	}
 
 }
