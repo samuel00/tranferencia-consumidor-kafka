@@ -24,56 +24,61 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest
-@EmbeddedKafka(topics = {"transfer-events"},partitions = 3)
-@TestPropertySource(properties = {"spring.kafka.producer.bootstrap-servers=${spring.embedded.kafka.brokers}",
-                                  "spring.kafka.consumer.bootstrap-servers=${spring.embedded.kafka.brokers}"})
+@EmbeddedKafka(topics = { "transfer-events" }, partitions = 3)
+@TestPropertySource(properties = { "spring.kafka.producer.bootstrap-servers=${spring.embedded.kafka.brokers}",
+		"spring.kafka.consumer.bootstrap-servers=${spring.embedded.kafka.brokers}" })
 class TrasnferenciaEventoServiceTest {
 
-    @Autowired EmbeddedKafkaBroker embeddedKafkaBroker;
+	@Autowired
+	EmbeddedKafkaBroker embeddedKafkaBroker;
 
-    @Autowired KafkaTemplate<String, String> kafkaTemplate;
+	@Autowired
+	KafkaTemplate<String, String> kafkaTemplate;
 
-    @Autowired KafkaListenerEndpointRegistry endpointRegistry;
+	@Autowired
+	KafkaListenerEndpointRegistry endpointRegistry;
 
-    @SpyBean TrasnferenciaEventoService trasnferenciaEventoService;
+	@SpyBean
+	TrasnferenciaEventoService trasnferenciaEventoService;
 
-    @SpyBean TransferenciaConsumidor transferenciaConsumidor;
+	@SpyBean
+	TransferenciaConsumidor transferenciaConsumidor;
 
-    @BeforeEach
-    void setaup(){
-        endpointRegistry.getListenerContainers().forEach(messageListenerContainer ->
-		ContainerTestUtils.waitForAssignment(messageListenerContainer,
-		                                     embeddedKafkaBroker.getPartitionsPerTopic()));
-    }
+	@BeforeEach
+	void setaup() {
+		endpointRegistry.getListenerContainers().forEach(messageListenerContainer -> ContainerTestUtils
+				.waitForAssignment(messageListenerContainer, embeddedKafkaBroker.getPartitionsPerTopic()));
+	}
 
-    @Test void publicaNovaTransferencia()
-                    throws InterruptedException, IOException {
-        //given
-        String json = "{\"id\":14,\"dataAgendamento\":\"03/05/2020\",\"dataTransferencia\":\"09/05/2020\",\"contaOrigem\":\"104736\",\"contaDestino\":\"204789\",\"valor\":10.0,\"valorTaxa\":72.0,\"status\":\"AGUARDANDO\"})";
+	/*
+	 * @Test void publicaNovaTransferenciaComRetentativa() throws
+	 * InterruptedException, IOException { // given Integer idTransferencia = 000;
+	 * String json = "{\"id\":" + idTransferencia +
+	 * ",\"dataAgendamento\":\"03/05/2020\",\"dataTransferencia\":\"09/05/2020\",\"contaOrigem\":\"104736\",\"contaDestino\":\"204789\",\"valor\":10.0,\"valorTaxa\":72.0,\"status\":\"AGUARDANDO\"})";
+	 * 
+	 * // when kafkaTemplate.sendDefault(json); new CountDownLatch(1).await(3,
+	 * TimeUnit.SECONDS);
+	 * 
+	 * // then verify(trasnferenciaEventoService,
+	 * times(4)).processarTransferenciaEvento(isA(ConsumerRecord.class));
+	 * verify(trasnferenciaEventoService,
+	 * times(1)).handleRecovery(isA(ConsumerRecord.class));
+	 * 
+	 * }
+	 */
 
-	//when
-        kafkaTemplate.sendDefault(json);
-        new CountDownLatch(1).await(3, TimeUnit.SECONDS);
+	@Test
+	void publicaNovaTransferencia() throws InterruptedException, IOException {
+		//given
+		String json = "{\"id\":14,\"dataAgendamento\":\"03/05/2020\",\"dataTransferencia\":\"09/05/2020\",\"contaOrigem\":\"104736\",\"contaDestino\":\"204789\",\"valor\":10.0,\"valorTaxa\":72.0,\"status\":\"AGUARDANDO\"})";
 
-	//then
-        verify(transferenciaConsumidor,times(1)).onMessage(isA(ConsumerRecord.class));
-        verify(trasnferenciaEventoService,times(1)).processarTransferenciaEvento(isA(ConsumerRecord.class));
+		//when
+		kafkaTemplate.sendDefault(json);
+		new CountDownLatch(1).await(3, TimeUnit.SECONDS);
 
-    }
+		//then
+		verify(transferenciaConsumidor, times(1)).onMessage(isA(ConsumerRecord.class));
+		verify(trasnferenciaEventoService, times(1)).processarTransferenciaEvento(isA(ConsumerRecord.class));
 
-    @Test void publicaNovaTransferenciaComRetentativa()
-                    throws InterruptedException, IOException {
-        //given
-        Integer idTransferencia = 000;
-        String json = "{\"id\":" + idTransferencia + ",\"dataAgendamento\":\"03/05/2020\",\"dataTransferencia\":\"09/05/2020\",\"contaOrigem\":\"104736\",\"contaDestino\":\"204789\",\"valor\":10.0,\"valorTaxa\":72.0,\"status\":\"AGUARDANDO\"})";
-
-        //when
-        kafkaTemplate.sendDefault(json);
-        new CountDownLatch(1).await(3, TimeUnit.SECONDS);
-
-        //then
-        verify(trasnferenciaEventoService,times(4)).processarTransferenciaEvento(isA(ConsumerRecord.class));
-        verify(trasnferenciaEventoService,times(1)).handleRecovery(isA(ConsumerRecord.class));
-
-    }
+	}
 }

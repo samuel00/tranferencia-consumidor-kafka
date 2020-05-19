@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: local
+    active: docker
 server:
   port: 8081
 
@@ -28,12 +28,12 @@ spring:
     template:
       default-topic: transfer-events
     consumer:
-      bootstrap-servers: kafka:9092,kafka:9093,kafka:9094
+      bootstrap-servers: kafka:9093
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       group-id: transfer-events-group
     producer:
       bootstrap-servers:
-        -   kafka:9092,kafka:9093,kafka:9094
+        -   kafka:9093
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
